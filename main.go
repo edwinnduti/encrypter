@@ -78,6 +78,9 @@ func OpenAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create encoder
+	encoder := json.NewEncoder(w)
+
 	// Find the environment configuration for the requested environment
 	var publicKey string
 	for _, env := range appConfig.Environments {
@@ -89,12 +92,13 @@ func OpenAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	// check if public key is empty
 	if publicKey == "" {
-		http.Error(w, "Invalid environment", http.StatusBadRequest)
+		openAPIInvalidEnvErrorResponse := OpenAPIErrorResponse{Error: "Invalid environment"}
+		if err := encoder.Encode(openAPIInvalidEnvErrorResponse); err != nil {
+			http.Error(w, "Invalid environment", http.StatusBadRequest)
+			return
+		}
 		return
 	}
-
-	// create encoder
-	encoder := json.NewEncoder(w)
 
 	// Replace this logic with your own encrypted key generation
 	sessionKey, err := EncryptAPIKey(publicKey, request.APIKey)
